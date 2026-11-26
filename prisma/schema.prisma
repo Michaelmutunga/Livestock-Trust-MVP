@@ -1,0 +1,526 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DISABLED
+}
+
+enum PartyType {
+  FARMER
+  COOPERATIVE
+  ORGANIZATION
+  INDIVIDUAL
+}
+
+enum PartyStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CooperativeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum FarmerStatus {
+  ACTIVE
+  INACTIVE
+  MERGED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+  ENDED
+}
+
+enum Role {
+  SYSTEM_ADMINISTRATOR
+  COOPERATIVE_ADMINISTRATOR
+  FIELD_OFFICER
+  VETERINARIAN
+  FARMER
+}
+
+enum ConsentScopeType {
+  CONTACT_DETAILS
+  ANIMAL_SUMMARY
+  OWNERSHIP_EVIDENCE
+  VETERINARY_RECORDS
+  MILK_PRODUCTION
+  BREEDING_RECORDS
+  INTERVENTION_RECORDS
+  HOLDING_LOCATION
+}
+
+enum ConsentCaptureMethod {
+  RECORDED_VERBAL
+  WRITTEN
+  DIGITAL
+}
+
+enum ConsentStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  SUPERSEDED
+}
+
+enum ConsentRevisionType {
+  CREATED
+  RENEWED
+  AMENDED
+  CORRECTED
+}
+
+enum AccessGrantType {
+  CONSENT
+  ADMINISTRATIVE
+}
+
+enum AccessGrantStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum ProfessionalType {
+  VETERINARIAN
+  ANIMAL_HEALTH_PROFESSIONAL
+}
+
+enum CredentialStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
+enum CredentialEvidenceType {
+  LICENSE_DOCUMENT
+  REGISTRATION_RECORD
+  IDENTITY_DOCUMENT
+  OTHER
+}
+
+enum CredentialEvidenceStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  SUPERSEDED
+}
+
+enum CredentialReviewDecision {
+  VERIFIED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
+enum ProfessionalAuthorizationDecisionType {
+  AUTHORIZED
+  REVOKED
+  SUSPENDED
+  EXPIRED
+}
+
+enum ProfessionalAuthorizationStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  SUSPENDED
+}
+
+enum AuthorizationScopeType {
+  COOPERATIVE
+  FARMER
+  ANIMAL
+}
+
+model User {
+  id                     String                              @id @default(cuid())
+  email                  String                              @unique
+  displayName            String
+  phone                  String?
+  status                 UserStatus                          @default(INVITED)
+  createdAt              DateTime                            @default(now())
+  updatedAt              DateTime                            @updatedAt
+  roleAssignments        RoleAssignment[]                    @relation("UserRoleAssignments")
+  createdRoleAssignments RoleAssignment[]                    @relation("RoleAssignmentCreator")
+  createdCooperatives    Cooperative[]                       @relation("CooperativeCreator")
+  createdFarmers         Farmer[]                            @relation("FarmerCreator")
+  createdParties         Party[]                             @relation("PartyCreator")
+  createdMemberships     FarmerCooperativeMembership[]       @relation("MembershipCreator")
+  createdContacts        FarmerPrivateContact[]              @relation("ContactCreator")
+  createdFarmerLinks     FarmerUserLink[]                    @relation("FarmerLinkCreator")
+  farmerUserLink         FarmerUserLink?
+  createdConsents        FarmerConsent[]                     @relation("ConsentCreator")
+  consentRevisions       ConsentRevision[]                   @relation("ConsentRevisionCreator")
+  consentRevocations     ConsentRevocation[]                 @relation("ConsentRevocationCreator")
+  createdAccessGrants    RecordAccessGrant[]                 @relation("AccessGrantCreator")
+  reviewedProfiles       ProfessionalProfile[]               @relation("CredentialReviewer")
+  submittedEvidence      ProfessionalCredentialEvidence[]    @relation("EvidenceSubmitter")
+  reviewedEvidence       ProfessionalCredentialEvidence[]    @relation("EvidenceReviewer")
+  createdAuthorizations  ProfessionalAuthorization[]         @relation("AuthorizationCreator")
+  revokedAuthorizations  ProfessionalAuthorization[]         @relation("AuthorizationRevoker")
+  professionalProfile    ProfessionalProfile?
+  credentialReviews      ProfessionalCredentialReview[]      @relation("CredentialReviewActor")
+  authorizationDecisions ProfessionalAuthorizationDecision[] @relation("AuthorizationDecisionActor")
+
+  @@index([status])
+  @@map("users")
+}
+
+model Party {
+  id                 String       @id @default(cuid())
+  partyType          PartyType
+  displayName        String
+  registrationNumber String?
+  status             PartyStatus  @default(ACTIVE)
+  farmerId           String?      @unique
+  cooperativeId      String?      @unique
+  createdByUserId    String
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  farmer             Farmer?      @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  cooperative        Cooperative? @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  createdBy          User         @relation("PartyCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([partyType, status])
+  @@map("parties")
+}
+
+model Cooperative {
+  id                         String                           @id @default(cuid())
+  name                       String
+  registrationNumber         String?                          @unique
+  county                     String?
+  contactPhone               String?
+  contactEmail               String?
+  status                     CooperativeStatus                @default(ACTIVE)
+  createdByUserId            String
+  createdAt                  DateTime                         @default(now())
+  updatedAt                  DateTime                         @updatedAt
+  createdBy                  User                             @relation("CooperativeCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  memberships                FarmerCooperativeMembership[]
+  parties                    Party[]
+  roleAssignments            RoleAssignment[]
+  receivedConsents           FarmerConsent[]
+  accessGrants               RecordAccessGrant[]
+  professionalAuthorizations ProfessionalAuthorization[]
+  authorizationScopes        ProfessionalAuthorizationScope[]
+
+  @@index([status])
+  @@map("cooperatives")
+}
+
+model Farmer {
+  id                  String                           @id @default(cuid())
+  fullName            String
+  email               String?
+  status              FarmerStatus                     @default(ACTIVE)
+  createdByUserId     String
+  createdAt           DateTime                         @default(now())
+  updatedAt           DateTime                         @updatedAt
+  createdBy           User                             @relation("FarmerCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  privateContact      FarmerPrivateContact?
+  memberships         FarmerCooperativeMembership[]
+  userLinks           FarmerUserLink[]
+  party               Party?
+  consents            FarmerConsent[]
+  accessGrants        RecordAccessGrant[]
+  authorizationScopes ProfessionalAuthorizationScope[]
+
+  @@index([status])
+  @@index([fullName])
+  @@map("farmers")
+}
+
+model FarmerPrivateContact {
+  id               String   @id @default(cuid())
+  farmerId         String   @unique
+  phone            String?
+  alternativePhone String?
+  address          String?
+  locationNote     String?
+  createdByUserId  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  farmer           Farmer   @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  createdBy        User     @relation("ContactCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@map("farmer_private_contacts")
+}
+
+model FarmerCooperativeMembership {
+  id               String           @id @default(cuid())
+  farmerId         String
+  cooperativeId    String
+  membershipNumber String?
+  status           MembershipStatus @default(ACTIVE)
+  joinedAt         DateTime         @default(now())
+  endedAt          DateTime?
+  createdByUserId  String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  farmer           Farmer           @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  cooperative      Cooperative      @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  createdBy        User             @relation("MembershipCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([farmerId, cooperativeId])
+  @@unique([cooperativeId, membershipNumber])
+  @@index([cooperativeId, status])
+  @@index([farmerId, status])
+  @@map("farmer_cooperative_memberships")
+}
+
+model FarmerUserLink {
+  id             String    @id @default(cuid())
+  farmerId       String
+  userId         String    @unique
+  linkedByUserId String
+  linkedAt       DateTime  @default(now())
+  unlinkedAt     DateTime?
+  farmer         Farmer    @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  linkedBy       User      @relation("FarmerLinkCreator", fields: [linkedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([farmerId])
+  @@map("farmer_user_links")
+}
+
+model RoleAssignment {
+  id              String       @id @default(cuid())
+  userId          String
+  role            Role
+  cooperativeId   String?
+  createdByUserId String
+  createdAt       DateTime     @default(now())
+  revokedAt       DateTime?
+  user            User         @relation("UserRoleAssignments", fields: [userId], references: [id], onDelete: Restrict)
+  cooperative     Cooperative? @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  createdBy       User         @relation("RoleAssignmentCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, role, cooperativeId])
+  @@index([cooperativeId, role, revokedAt])
+  @@index([userId, revokedAt])
+  @@map("role_assignments")
+}
+
+model FarmerConsent {
+  id                     String               @id @default(cuid())
+  farmerId               String
+  recipientCooperativeId String
+  scopeType              ConsentScopeType
+  scopeReferenceId       String?
+  captureMethod          ConsentCaptureMethod
+  responsiblePersonName  String
+  responsiblePersonRole  String
+  consentStatus          ConsentStatus        @default(ACTIVE)
+  capturedAt             DateTime
+  effectiveFrom          DateTime             @default(now())
+  expiresAt              DateTime?
+  revokedAt              DateTime?
+  createdByUserId        String
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  farmer                 Farmer               @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  recipientCooperative   Cooperative          @relation(fields: [recipientCooperativeId], references: [id], onDelete: Restrict)
+  createdBy              User                 @relation("ConsentCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  revisions              ConsentRevision[]
+  revocation             ConsentRevocation?
+  accessGrants           RecordAccessGrant[]
+
+  @@unique([id, farmerId, recipientCooperativeId, scopeType, scopeReferenceId])
+  @@index([farmerId, consentStatus])
+  @@index([recipientCooperativeId, consentStatus])
+  @@index([expiresAt])
+  @@map("farmer_consents")
+}
+
+model ConsentRevision {
+  id                    String               @id @default(cuid())
+  consentId             String
+  revisionNumber        Int
+  revisionType          ConsentRevisionType
+  scopeType             ConsentScopeType
+  scopeReferenceId      String?
+  captureMethod         ConsentCaptureMethod
+  responsiblePersonName String
+  responsiblePersonRole String
+  effectiveFrom         DateTime
+  expiresAt             DateTime?
+  reason                String?
+  createdByUserId       String
+  createdAt             DateTime             @default(now())
+  consent               FarmerConsent        @relation(fields: [consentId], references: [id], onDelete: Restrict)
+  createdBy             User                 @relation("ConsentRevisionCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([consentId, revisionNumber])
+  @@index([consentId, createdAt])
+  @@map("consent_revisions")
+}
+
+model ConsentRevocation {
+  id              String        @id @default(cuid())
+  consentId       String        @unique
+  revokedAt       DateTime      @default(now())
+  reason          String
+  createdByUserId String
+  consent         FarmerConsent @relation(fields: [consentId], references: [id], onDelete: Restrict)
+  createdBy       User          @relation("ConsentRevocationCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@map("consent_revocations")
+}
+
+model RecordAccessGrant {
+  id                     String            @id @default(cuid())
+  farmerId               String
+  recipientCooperativeId String
+  consentId              String?
+  grantType              AccessGrantType
+  scopeType              ConsentScopeType
+  scopeReferenceId       String?
+  status                 AccessGrantStatus @default(ACTIVE)
+  grantedAt              DateTime          @default(now())
+  expiresAt              DateTime?
+  revokedAt              DateTime?
+  reason                 String?
+  createdByUserId        String
+  farmer                 Farmer            @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  recipientCooperative   Cooperative       @relation(fields: [recipientCooperativeId], references: [id], onDelete: Restrict)
+  consent                FarmerConsent?    @relation(fields: [consentId], references: [id], onDelete: Restrict)
+  createdBy              User              @relation("AccessGrantCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([farmerId, recipientCooperativeId, status])
+  @@index([consentId, status])
+  @@index([expiresAt])
+  @@map("record_access_grants")
+}
+
+model ProfessionalProfile {
+  id                    String                           @id @default(cuid())
+  userId                String                           @unique
+  professionalType      ProfessionalType
+  registrationNumber    String?
+  credentialStatus      CredentialStatus                 @default(PENDING)
+  credentialVerifiedAt  DateTime?
+  credentialReviewerId  String?
+  credentialReviewNotes String?
+  createdAt             DateTime                         @default(now())
+  updatedAt             DateTime                         @updatedAt
+  user                  User                             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  credentialReviewer    User?                            @relation("CredentialReviewer", fields: [credentialReviewerId], references: [id], onDelete: Restrict)
+  evidence              ProfessionalCredentialEvidence[]
+  reviewHistory         ProfessionalCredentialReview[]
+  authorizations        ProfessionalAuthorization[]
+
+  @@index([credentialStatus])
+  @@index([registrationNumber])
+  @@map("professional_profiles")
+}
+
+model ProfessionalCredentialEvidence {
+  id                    String                         @id @default(cuid())
+  professionalProfileId String
+  evidenceType          CredentialEvidenceType
+  storageKey            String?
+  description           String
+  status                CredentialEvidenceStatus       @default(SUBMITTED)
+  submittedByUserId     String
+  submittedAt           DateTime                       @default(now())
+  reviewedByUserId      String?
+  reviewedAt            DateTime?
+  reviewNotes           String?
+  professionalProfile   ProfessionalProfile            @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  submittedBy           User                           @relation("EvidenceSubmitter", fields: [submittedByUserId], references: [id], onDelete: Restrict)
+  reviewedBy            User?                          @relation("EvidenceReviewer", fields: [reviewedByUserId], references: [id], onDelete: Restrict)
+  reviewHistory         ProfessionalCredentialReview[]
+
+  @@index([professionalProfileId, status])
+  @@map("professional_credential_evidence")
+}
+
+model ProfessionalAuthorization {
+  id                    String                              @id @default(cuid())
+  professionalProfileId String
+  cooperativeId         String
+  status                ProfessionalAuthorizationStatus     @default(ACTIVE)
+  authorizedByUserId    String
+  authorizedAt          DateTime                            @default(now())
+  expiresAt             DateTime?
+  revokedAt             DateTime?
+  revokedByUserId       String?
+  revocationReason      String?
+  professionalProfile   ProfessionalProfile                 @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  cooperative           Cooperative                         @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  authorizedBy          User                                @relation("AuthorizationCreator", fields: [authorizedByUserId], references: [id], onDelete: Restrict)
+  revokedBy             User?                               @relation("AuthorizationRevoker", fields: [revokedByUserId], references: [id], onDelete: Restrict)
+  scopes                ProfessionalAuthorizationScope[]
+  decisions             ProfessionalAuthorizationDecision[]
+
+  @@unique([id, cooperativeId])
+  @@index([cooperativeId, status])
+  @@index([professionalProfileId, status])
+  @@index([expiresAt])
+  @@map("professional_authorizations")
+}
+
+model ProfessionalAuthorizationScope {
+  id              String                    @id @default(cuid())
+  authorizationId String
+  scopeType       AuthorizationScopeType
+  cooperativeId   String
+  farmerId        String?
+  animalId        String?
+  createdAt       DateTime                  @default(now())
+  authorization   ProfessionalAuthorization @relation(fields: [authorizationId], references: [id], onDelete: Restrict)
+  cooperative     Cooperative               @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  farmer          Farmer?                   @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+
+  @@unique([authorizationId, scopeType, cooperativeId, farmerId, animalId])
+  @@index([cooperativeId, scopeType])
+  @@index([farmerId, scopeType])
+  @@index([animalId, scopeType])
+  @@map("professional_authorization_scopes")
+}
+
+model ProfessionalCredentialReview {
+  id                    String                          @id @default(cuid())
+  professionalProfileId String
+  decision              CredentialReviewDecision
+  reviewerUserId        String
+  evidenceId            String?
+  reason                String
+  reviewedAt            DateTime                        @default(now())
+  professionalProfile   ProfessionalProfile             @relation(fields: [professionalProfileId], references: [id], onDelete: Restrict)
+  reviewer              User                            @relation("CredentialReviewActor", fields: [reviewerUserId], references: [id], onDelete: Restrict)
+  evidence              ProfessionalCredentialEvidence? @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+
+  @@index([professionalProfileId, reviewedAt])
+  @@map("professional_credential_reviews")
+}
+
+model ProfessionalAuthorizationDecision {
+  id              String                                @id @default(cuid())
+  authorizationId String
+  decision        ProfessionalAuthorizationDecisionType
+  actorUserId     String
+  reason          String
+  decidedAt       DateTime                              @default(now())
+  authorization   ProfessionalAuthorization             @relation(fields: [authorizationId], references: [id], onDelete: Restrict)
+  actor           User                                  @relation("AuthorizationDecisionActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([authorizationId, decidedAt])
+  @@map("professional_authorization_decisions")
+}
