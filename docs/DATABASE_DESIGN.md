@@ -1,0 +1,9 @@
+# Database design
+
+**Status: Milestones 2A, 2B, and 2B.1 implemented for identity, tenancy, consent, professional authorization, and integrity hardening; later domain modules remain planned.**
+
+Implemented in `prisma/schema.prisma`: User, Party, Cooperative, Farmer, FarmerPrivateContact, FarmerCooperativeMembership, FarmerUserLink, RoleAssignment, FarmerConsent, ConsentRevision, ConsentRevocation, RecordAccessGrant, ProfessionalProfile, ProfessionalCredentialEvidence, ProfessionalCredentialReview, ProfessionalAuthorization, ProfessionalAuthorizationDecision, and ProfessionalAuthorizationScope. Migrations are `20261126085031_init_identity_tenancy`, `20261126090944_consent_professional_authorization`, `20261126093000_authorization_integrity_hardening`, `20261126094500_exact_consent_scope_guard`, and `20261126095000_fix_exact_consent_scope_guard`.
+
+Still planned for later milestones: Auth.js adapter tables, animal, ownership, veterinary, breeding, milk, intervention, revision, and audit modules.
+
+Farmer-to-cooperative membership is many-to-many. The implemented schema keeps global farmer identity separate from cooperative membership and requires cooperative-scoped roles to include a cooperative. Party references are type-checked by PostgreSQL. Consent is scope-specific, revisioned, revocable, and linked to recipient cooperative access grants; administrative grants are disabled for MVP. Professional credentials and cooperative authorizations are separate, with append-only review/decision history and explicit reviewer/authorizer policy checks. PostgreSQL constraints enforce exact consent scope, parent-authorization cooperative scope, and unique active scope shapes. Animal ownership remains planned for a later migration; animal authorization references stay opaque and are not eligible until that module exists.
