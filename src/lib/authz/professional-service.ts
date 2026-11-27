@@ -1,10 +1,11 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
+import type { AuthorizationScopeType, CredentialReviewDecision } from "@prisma/client";
 
 import { AuthorizationDeniedError } from "./errors";
 import type { TrustedActorContext } from "./context";
 import { assertCanManageProfessionalAuthorization, assertCanReviewCredentials } from "./policy";
 
-export async function reviewProfessionalCredentials(prisma: PrismaClient, actor: TrustedActorContext, profileId: string, decision: Prisma.CredentialReviewDecision, reason: string, evidenceId?: string) {
+export async function reviewProfessionalCredentials(prisma: PrismaClient, actor: TrustedActorContext, profileId: string, decision: CredentialReviewDecision, reason: string, evidenceId?: string) {
   return prisma.$transaction(async (tx) => {
     await assertCanReviewCredentials(tx, actor);
     const profile = await tx.professionalProfile.findUnique({ where: { id: profileId } });
@@ -23,7 +24,7 @@ export async function reviewProfessionalCredentials(prisma: PrismaClient, actor:
   });
 }
 
-type AuthorizationScopeInput = { scopeType: Prisma.AuthorizationScopeType; farmerId?: string; animalId?: string };
+type AuthorizationScopeInput = { scopeType: AuthorizationScopeType; farmerId?: string; animalId?: string };
 
 export async function createProfessionalAuthorization(prisma: PrismaClient, actor: TrustedActorContext, professionalProfileId: string, cooperativeId: string, scopes: AuthorizationScopeInput[], expiresAt?: Date) {
   return prisma.$transaction(async (tx) => {

@@ -171,23 +171,9 @@ async function main() {
     /professional_authorization_scope_farmer_cooperative_fk|foreign key constraint|violates foreign key|Unique constraint/i,
   );
 
-  await prisma.professionalAuthorizationScope.deleteMany({ where: { authorizationId: authorization.id } });
-  await prisma.professionalAuthorizationDecision.deleteMany({ where: { authorizationId: authorization.id } });
-  await prisma.professionalAuthorization.delete({ where: { id: authorization.id } });
-  await prisma.professionalProfile.update({ where: { id: profile.id }, data: { credentialStatus: "REJECTED", credentialVerifiedAt: null, credentialReviewerId: null } });
-  await prisma.professionalCredentialReview.deleteMany({ where: { professionalProfileId: profile.id } });
-  await prisma.professionalCredentialEvidence.delete({ where: { id: evidence.id } });
-  await prisma.professionalProfile.delete({ where: { id: profile.id } });
-  await prisma.roleAssignment.delete({ where: { id: professionalRole.id } });
-  await prisma.user.delete({ where: { id: professionalUser.id } });
-  await prisma.recordAccessGrant.deleteMany({ where: { id: { in: [grant.id] } } });
-  await prisma.consentRevocation.deleteMany({ where: { consentId: consent.id } });
-  await prisma.consentRevision.deleteMany({ where: { consentId: consent.id } });
-  await prisma.farmerConsent.delete({ where: { id: consent.id } });
-  await prisma.recordAccessGrant.deleteMany({ where: { consentId: expiredConsent.id } });
-  await prisma.farmerConsent.delete({ where: { id: expiredConsent.id } });
-  await prisma.cooperative.delete({ where: { id: cooperativeB.id } });
-  console.log("Consent, revocation, expiry, authorization, credential, scope, and unauthorized-access tests passed.");
+  // This suite writes revision, review, and decision history. Keep the fictional
+  // fixture graph intact so cleanup cannot erase append-only records.
+  console.log("Consent, revocation, expiry, authorization, credential, scope, and unauthorized-access tests passed. Fictional test records retained as history.");
 }
 
 main().catch((error) => { console.error(error); process.exitCode = 1; }).finally(async () => prisma.$disconnect());

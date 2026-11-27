@@ -1,4 +1,5 @@
 import { Prisma, Role } from "@prisma/client";
+import type { ConsentScopeType } from "@prisma/client";
 
 import { AuthorizationDeniedError } from "./errors";
 import { assertTrustedActorContext } from "./auth-boundary";
@@ -55,7 +56,7 @@ export async function assertCanAccessCooperative(db: DatabaseClient, actor: Trus
 export async function getEligibleConsentGrant(
   db: DatabaseClient,
   actor: TrustedActorContext,
-  input: { farmerId: string; cooperativeId: string; scopeType: Prisma.ConsentScopeType; scopeReferenceId?: string },
+  input: { farmerId: string; cooperativeId: string; scopeType: ConsentScopeType; scopeReferenceId?: string },
 ) {
   await assertCanAccessCooperative(db, actor, input.cooperativeId);
   const now = new Date();
@@ -90,7 +91,7 @@ export async function getEligibleProfessionalAuthorization(
   actor: TrustedActorContext,
   input: { cooperativeId: string; farmerId?: string; animalId?: string },
 ) {
-  assertTrustedActorContext(actor);
+  await activeUser(db, actor);
   if (input.animalId) throw new AuthorizationDeniedError("Animal authorization is unavailable until the Animal access policy is implemented.");
   const profile = await db.professionalProfile.findUnique({ where: { userId: actor.userId }, select: { id: true, credentialStatus: true } });
   if (!profile || profile.credentialStatus !== "VERIFIED") throw new AuthorizationDeniedError();

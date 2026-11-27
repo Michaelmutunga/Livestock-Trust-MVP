@@ -13,6 +13,6 @@ The server authorization boundary is centralized in `src/lib/authz/`. It accepts
 
 Protected records are read through approved services in `src/lib/authz/protected-data-service.ts`; an ESLint architecture rule prevents App Router files from importing Prisma or the database singleton directly. Authentication is not implemented yet, so no production user-facing authorization boundary is claimed.
 
-The future authentication adapter is the only designated actor-creation boundary (`src/lib/authz/auth-boundary.ts`). Runtime capabilities are issued into an internal weak set, carry session and expiry metadata, and are revalidated for active user and role state by protected services.
+Authentication is unavailable until a real authentication adapter is implemented. `src/lib/authz/auth-boundary.ts` rejects all caller-supplied principals and issues no runtime contexts. The internal WeakSet capability check remains; once an approved adapter is implemented, protected services must revalidate session expiry and current active user/role state on every authorization decision.
                                              |-> future file storage for photos
 ```

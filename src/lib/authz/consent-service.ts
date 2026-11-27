@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
+import type { ConsentCaptureMethod, ConsentProviderType, ConsentScopeType } from "@prisma/client";
 
 import { AuthorizationDeniedError } from "./errors";
 import type { TrustedActorContext } from "./context";
@@ -7,13 +8,13 @@ import { assertCanCaptureConsent, assertCanManageConsent } from "./policy";
 type ConsentInput = {
   farmerId: string;
   recipientCooperativeId: string;
-  scopeType: Prisma.ConsentScopeType;
+  scopeType: ConsentScopeType;
   scopeReferenceId?: string;
-  captureMethod: Prisma.ConsentCaptureMethod;
+  captureMethod: ConsentCaptureMethod;
   responsiblePersonName: string;
   responsiblePersonRole: string;
   captureNotes: string;
-  consentProviderType: Prisma.ConsentProviderType;
+  consentProviderType: ConsentProviderType;
   consentProviderName: string;
   consentProviderFarmerId?: string;
   consentProviderUserId?: string;

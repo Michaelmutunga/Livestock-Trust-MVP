@@ -224,10 +224,10 @@ model User {
   professionalProfile      ProfessionalProfile?
   credentialReviews        ProfessionalCredentialReview[]      @relation("CredentialReviewActor")
   authorizationDecisions   ProfessionalAuthorizationDecision[] @relation("AuthorizationDecisionActor")
-  createdAnimals            Animal[]                            @relation("AnimalCreator")
-  createdAnimalIdentifiers  AnimalIdentifier[]                  @relation("AnimalIdentifierCreator")
-  createdAnimalLinks        CooperativeAnimalLink[]              @relation("AnimalLinkCreator")
-  endedAnimalLinks          CooperativeAnimalLink[]              @relation("AnimalLinkEnder")
+  createdAnimals           Animal[]                            @relation("AnimalCreator")
+  createdAnimalIdentifiers AnimalIdentifier[]                  @relation("AnimalIdentifierCreator")
+  createdAnimalLinks       CooperativeAnimalLink[]             @relation("AnimalLinkCreator")
+  endedAnimalLinks         CooperativeAnimalLink[]             @relation("AnimalLinkEnder")
 
   @@index([status])
   @@map("users")
@@ -318,19 +318,19 @@ model FarmerPrivateContact {
 }
 
 model FarmerCooperativeMembership {
-  id               String           @id @default(cuid())
+  id               String                  @id @default(cuid())
   farmerId         String
   cooperativeId    String
   membershipNumber String?
-  status           MembershipStatus @default(ACTIVE)
-  joinedAt         DateTime         @default(now())
+  status           MembershipStatus        @default(ACTIVE)
+  joinedAt         DateTime                @default(now())
   endedAt          DateTime?
   createdByUserId  String
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  farmer           Farmer           @relation(fields: [farmerId], references: [id], onDelete: Restrict)
-  cooperative      Cooperative      @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
-  createdBy        User             @relation("MembershipCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  farmer           Farmer                  @relation(fields: [farmerId], references: [id], onDelete: Restrict)
+  cooperative      Cooperative             @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  createdBy        User                    @relation("MembershipCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
   animalLinks      CooperativeAnimalLink[]
 
   @@unique([farmerId, cooperativeId])
@@ -342,20 +342,20 @@ model FarmerCooperativeMembership {
 }
 
 model Animal {
-  id               String               @id @default(cuid())
-  species          String
-  breed            String?
-  sex              AnimalSex            @default(UNKNOWN)
-  name             String?
-  birthDate        DateTime?
-  birthDateEstimated Boolean            @default(false)
-  status           AnimalStatus         @default(ACTIVE)
-  createdByUserId  String
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  createdBy        User                 @relation("AnimalCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  identifiers      AnimalIdentifier[]
-  cooperativeLinks CooperativeAnimalLink[]
+  id                 String                           @id @default(cuid())
+  species            String
+  breed              String?
+  sex                AnimalSex                        @default(UNKNOWN)
+  name               String?
+  birthDate          DateTime?
+  birthDateEstimated Boolean                          @default(false)
+  status             AnimalStatus                     @default(ACTIVE)
+  createdByUserId    String
+  createdAt          DateTime                         @default(now())
+  updatedAt          DateTime                         @updatedAt
+  createdBy          User                             @relation("AnimalCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  identifiers        AnimalIdentifier[]
+  cooperativeLinks   CooperativeAnimalLink[]
   professionalScopes ProfessionalAuthorizationScope[]
 
   @@index([status])
@@ -364,19 +364,19 @@ model Animal {
 }
 
 model AnimalIdentifier {
-  id             String               @id @default(cuid())
-  animalId       String
-  identifierType AnimalIdentifierType
+  id              String               @id @default(cuid())
+  animalId        String
+  identifierType  AnimalIdentifierType
   identifierValue String
   normalizedValue String
-  isPrimary      Boolean              @default(false)
-  source         String?
-  issuedAt       DateTime             @default(now())
-  retiredAt      DateTime?
+  isPrimary       Boolean              @default(false)
+  source          String?
+  issuedAt        DateTime             @default(now())
+  retiredAt       DateTime?
   createdByUserId String
-  createdAt      DateTime             @default(now())
-  animal         Animal               @relation(fields: [animalId], references: [id], onDelete: Restrict)
-  createdBy      User                 @relation("AnimalIdentifierCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  createdAt       DateTime             @default(now())
+  animal          Animal               @relation(fields: [animalId], references: [id], onDelete: Restrict)
+  createdBy       User                 @relation("AnimalIdentifierCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
 
   @@index([identifierType, normalizedValue])
   @@index([animalId, retiredAt])
@@ -384,23 +384,23 @@ model AnimalIdentifier {
 }
 
 model CooperativeAnimalLink {
-  id                 String                       @id @default(cuid())
-  animalId           String
-  cooperativeId      String
-  membershipId       String?
-  status             AnimalLinkStatus             @default(ACTIVE)
-  source             AnimalLinkSource
-  linkedAt           DateTime                     @default(now())
-  endedAt            DateTime?
-  linkedByUserId     String
-  endedByUserId      String?
-  createdAt          DateTime                     @default(now())
-  updatedAt          DateTime                     @updatedAt
-  animal             Animal                       @relation(fields: [animalId], references: [id], onDelete: Restrict)
-  cooperative        Cooperative                  @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
-  membership         FarmerCooperativeMembership? @relation(fields: [membershipId, cooperativeId], references: [id, cooperativeId], onDelete: Restrict)
-  linkedBy           User                         @relation("AnimalLinkCreator", fields: [linkedByUserId], references: [id], onDelete: Restrict)
-  endedBy            User?                        @relation("AnimalLinkEnder", fields: [endedByUserId], references: [id], onDelete: Restrict)
+  id             String                       @id @default(cuid())
+  animalId       String
+  cooperativeId  String
+  membershipId   String?
+  status         AnimalLinkStatus             @default(ACTIVE)
+  source         AnimalLinkSource
+  linkedAt       DateTime                     @default(now())
+  endedAt        DateTime?
+  linkedByUserId String
+  endedByUserId  String?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  animal         Animal                       @relation(fields: [animalId], references: [id], onDelete: Restrict)
+  cooperative    Cooperative                  @relation(fields: [cooperativeId], references: [id], onDelete: Restrict)
+  membership     FarmerCooperativeMembership? @relation(fields: [membershipId, cooperativeId], references: [id, cooperativeId], onDelete: Restrict)
+  linkedBy       User                         @relation("AnimalLinkCreator", fields: [linkedByUserId], references: [id], onDelete: Restrict)
+  endedBy        User?                        @relation("AnimalLinkEnder", fields: [endedByUserId], references: [id], onDelete: Restrict)
 
   @@index([cooperativeId, status])
   @@index([animalId, status])

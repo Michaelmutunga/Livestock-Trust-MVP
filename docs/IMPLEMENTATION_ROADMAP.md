@@ -9,14 +9,15 @@
 - Milestone 2B.2: runtime actor-boundary capability, protected data-access services, consent capture provenance and lifecycle correction, serializable revisions, and animal-authorization deferral.
 - Milestone 2B.3: explicit farmer-consent provider provenance, legacy consent quarantine, database terminal-revocation and immutable-scope guards, professional decision integrity, direct SQL tests and architecture import enforcement.
 - Milestone 2C: animal identity, historical identifier rules, explicit cooperative animal links, active-link tenant checks, and animal-scoped professional authorization foreign keys.
+- Milestone 2C.1: disable actor issuance until a real authentication adapter exists; immutable consent provenance and professional decision history; terminal animal identifier/link history; database rejection of animal authorization scopes.
 
 ## Current milestone
 
-- Milestone 2C is implemented and verified locally. PostgreSQL verification used host port 5433 due to an unrelated service occupying 5432.
+- Milestone 2C.1 hardening is implemented and its two incremental migrations are applied. Authentication and animal authorization remain disabled. PostgreSQL verification used host port 5433 because an unrelated service occupies 5432.
 
 ## Next milestone
 
-- Next phase: ownership claims, evidence review and transfer history. Do not begin until separately approved.
+- Next phase: independent review of Milestone 2C.1. Ownership claims, evidence review and transfer history require separate approval.
 
 ## Later milestones
 

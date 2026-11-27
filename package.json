@@ -16,6 +16,7 @@
     "db:test:hardening": "tsx scripts/test-authz-hardening.ts",
     "db:test:integrity": "tsx scripts/test-db-integrity-b23.ts",
     "db:test:animals": "tsx scripts/test-animal-identity.ts",
+    "db:test:m2c1": "tsx scripts/test-m2c1-integrity.ts",
     "test:architecture": "node scripts/test-architecture-b23.js"
   },
   "dependencies": {

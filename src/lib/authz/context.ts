@@ -1,7 +1,7 @@
 /**
- * Authentication is intentionally not implemented in this milestone. The future
- * Auth.js adapter must resolve a verified principal and call resolveTrustedActor.
- * Route payloads and arbitrary user IDs must never be passed as principals.
+ * Authentication is intentionally unavailable. No exported function issues this
+ * capability; only a future integrated authentication adapter may add an issuer.
+ * Route payloads and arbitrary user IDs must never be treated as principals.
  */
 export type TrustedActorContext = Readonly<{
   readonly userId: string;

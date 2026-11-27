@@ -1,10 +1,10 @@
 # Current status
 
-Snapshot date: 2026-11-26
+Snapshot date: 2026-11-27
 
 ## Implementation state
 
-Milestone 1, Milestone 2A, Milestone 2B, Milestone 2B.1, Milestone 2B.2, Milestone 2B.3 and the approved Milestone 2C animal identity slice are implemented locally. The worktree has not been committed or pushed. Authentication, Auth.js adapter tables, ownership and later business domain modules remain unimplemented.
+Milestones 1 through 2C.1 are implemented locally. The worktree has not been committed or pushed. Authentication, Auth.js adapter tables, ownership and later business domain modules remain unimplemented.
 
 ## Implemented
 
@@ -38,6 +38,12 @@ Milestone 1, Milestone 2A, Milestone 2B, Milestone 2B.1, Milestone 2B.2, Milesto
 - Direct SQL integrity test suite and architecture import-boundary test.
 - Animal, AnimalIdentifier and CooperativeAnimalLink models with migration `20261127100000_animal_identity_and_cooperative_links`.
 - Active identifier uniqueness, immutable identifier identity, historical retirement, cooperative-link tenant membership checks, and a foreign key for deferred animal professional scopes.
+- Milestone 2C.1 actor resolver rejects all caller-provided principals until a real authentication adapter exists; protected professional authorization rechecks current user status.
+- Consent provider identity/provenance and consent revisions are append-only; `LEGACY_UNVERIFIED` cannot be upgraded in place.
+- Credential review and authorization decision rows reject updates and deletes.
+- Animal identifiers reject identity edits, reactivation and deletion. External IDs may be reused after retirement; Livestock Trust internal references remain globally unique after retirement.
+- Cooperative animal links reject identity changes, reactivation and deletion; active membership-backed links require an active membership.
+- Database scope shape rejects `ANIMAL` professional authorization while retaining the animal foreign key and cooperative/membership composite relationship.
 
 ## Implemented and tested
 
@@ -62,6 +68,9 @@ Milestone 1, Milestone 2A, Milestone 2B, Milestone 2B.1, Milestone 2B.2, Milesto
 - Milestone 2A tests passed after the Milestone 2B migration.
 - Original fictional Milestone 2A seed counts remained intact after test cleanup.
 - Milestone 2B.1 hardening tests passed: exact consent scope, cross-cooperative denial, expiry, atomic revocation, credential-review gating, authorization lifecycle, invalid scopes, duplicate scopes, and privacy boundary checks.
+- Milestone 2C.1 migrations `20261127120000_m2c1_historical_integrity` and `20261127130000_preserve_consent_revision_history` deployed incrementally; all 13 migrations report up to date.
+- Prisma format, validation, client generation, TypeScript and architecture boundary checks passed.
+- `db:test:animals`, `db:test:integrity`, `db:test:m2c1`, Milestone 2A `scripts/test-db.js`, and `db:test:consent` passed against the Livestock Trust database on port 5433. Append-only test fixtures are retained.
 
 ## Not yet tested in this environment
 
@@ -76,12 +85,16 @@ Milestone 1, Milestone 2A, Milestone 2B, Milestone 2B.1, Milestone 2B.2, Milesto
 - npm reported that Next.js 15.5.7 has a published security warning. The approved stack version was retained for this milestone.
 - Auth.js adapter tables do not exist by design.
 - Ownership, custody/location history, veterinary, breeding, milk, intervention, audit, and revision modules are not implemented.
-- The trusted actor context is an explicit boundary for the future authentication layer; no request route currently creates or consumes it.
-- `ProfessionalAuthorizationScope.animalId` remains intentionally opaque until the Animal module adds its foreign key; animal-scoped authorization is therefore not eligible in the policy evaluator yet.
+- The trusted actor context is an explicit boundary for future authentication; no current code can issue it, and no request route creates or consumes it.
+- `ProfessionalAuthorizationScope.animalId` retains its foreign key, while database scope checks and application policy reject animal authorization.
 - Two fictional consent fixtures and one fictional professional profile from earlier Milestone 2B testing remain in the development database; they were not deleted during this hardening work.
-- Authentication is still not implemented. The actor resolver requires a future verified principal and does not itself provide an Auth.js authentication boundary.
+- Authentication is still not implemented. The actor resolver rejects all principals until a real authentication adapter is connected.
+- `db:test:hardening` fails at the intentionally unavailable auth boundary because it depended on caller-supplied test actors; its service-level integration checks remain outstanding until a real adapter exists.
+- `npm run lint` failed: ESLint traversed generated `.next` output and reported generated-code/CommonJS import and Next declaration errors. Lint is not recorded as passing.
+- No database reset was run. Only the two new incremental migrations were deployed; no existing application rows were deleted by migration or test cleanup. The consent authorization suite retains its fictional test graph because it contains append-only history.
+- No Git mutation was performed; changes remain uncommitted.
 - A real authentication provider remains required before production user-facing authorization readiness can be claimed.
 
 ## Immediate next action
 
-Independent review of Milestone 2C, followed by separate approval for ownership evidence and transfer history.
+Independent review of Milestone 2C.1. Ownership evidence and transfer history require separate approval.
