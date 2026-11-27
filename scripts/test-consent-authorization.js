@@ -41,6 +41,13 @@ async function main() {
       captureMethod: "RECORDED_VERBAL",
       responsiblePersonName: "Demo Field Officer",
       responsiblePersonRole: "Field Officer",
+      consentProviderType: "FARMER",
+      consentProviderName: "Amina Demo Farmer",
+      consentProviderFarmerId: farmer.id,
+      purpose: "Regression test access",
+      evidenceReference: "fixture-verbal-note",
+      captureNotes: "Fictional recorded verbal consent for regression testing",
+      capturedByUserId: admin.id,
       capturedAt: new Date(),
       createdByUserId: admin.id,
     },
@@ -54,6 +61,14 @@ async function main() {
       captureMethod: consent.captureMethod,
       responsiblePersonName: consent.responsiblePersonName,
       responsiblePersonRole: consent.responsiblePersonRole,
+      consentProviderType: consent.consentProviderType,
+      consentProviderName: consent.consentProviderName,
+      consentProviderFarmerId: consent.consentProviderFarmerId,
+      purpose: consent.purpose,
+      evidenceReference: consent.evidenceReference,
+      provenanceStatus: consent.provenanceStatus,
+      captureNotes: consent.captureNotes,
+      capturedByUserId: consent.capturedByUserId,
       effectiveFrom: consent.effectiveFrom,
       createdByUserId: admin.id,
     },
@@ -86,6 +101,13 @@ async function main() {
       captureMethod: "DIGITAL",
       responsiblePersonName: "Demo Farmer",
       responsiblePersonRole: "Farmer",
+      consentProviderType: "FARMER",
+      consentProviderName: "Amina Demo Farmer",
+      consentProviderFarmerId: farmer.id,
+      purpose: "Expired fixture",
+      evidenceReference: "fixture-digital-reference",
+      captureNotes: "Fictional expired consent fixture",
+      capturedByUserId: admin.id,
       capturedAt: new Date(Date.now() - 172800000),
       effectiveFrom: new Date(Date.now() - 172800000),
       expiresAt: new Date(Date.now() - 86400000),
@@ -117,6 +139,7 @@ async function main() {
     },
   });
   await prisma.professionalCredentialEvidence.update({ where: { id: evidence.id }, data: { status: "ACCEPTED", reviewedByUserId: admin.id, reviewedAt: new Date(), reviewNotes: "Accepted for test" } });
+  await prisma.professionalCredentialReview.create({ data: { professionalProfileId: profile.id, decision: "VERIFIED", reviewerUserId: admin.id, evidenceId: evidence.id, reason: "Accepted for test" } });
   const verifiedProfile = await prisma.professionalProfile.update({ where: { id: profile.id }, data: { credentialStatus: "VERIFIED", credentialVerifiedAt: new Date(), credentialReviewerId: admin.id } });
   assert.equal(verifiedProfile.credentialStatus, "VERIFIED");
 
@@ -124,11 +147,14 @@ async function main() {
     data: {
       professionalProfileId: profile.id,
       cooperativeId: cooperativeA.id,
+      status: "SUSPENDED",
       authorizedByUserId: admin.id,
       scopes: { create: { scopeType: "FARMER", cooperativeId: cooperativeA.id, farmerId: farmer.id } },
     },
     include: { scopes: true },
   });
+  await prisma.professionalAuthorizationDecision.create({ data: { authorizationId: authorization.id, decision: "AUTHORIZED", actorUserId: admin.id, reason: "Accepted for test" } });
+  await prisma.professionalAuthorization.update({ where: { id: authorization.id }, data: { status: "ACTIVE" } });
   assert.equal(authorization.scopes[0].farmerId, farmer.id);
   const activeAuthorizations = await prisma.professionalAuthorization.findMany({ where: { id: authorization.id, status: "ACTIVE", expiresAt: null, professionalProfile: { credentialStatus: "VERIFIED" }, scopes: { some: { scopeType: "FARMER", farmerId: farmer.id, cooperativeId: cooperativeA.id } } } });
   assert.equal(activeAuthorizations.length, 1);
@@ -146,7 +172,10 @@ async function main() {
   );
 
   await prisma.professionalAuthorizationScope.deleteMany({ where: { authorizationId: authorization.id } });
+  await prisma.professionalAuthorizationDecision.deleteMany({ where: { authorizationId: authorization.id } });
   await prisma.professionalAuthorization.delete({ where: { id: authorization.id } });
+  await prisma.professionalProfile.update({ where: { id: profile.id }, data: { credentialStatus: "REJECTED", credentialVerifiedAt: null, credentialReviewerId: null } });
+  await prisma.professionalCredentialReview.deleteMany({ where: { professionalProfileId: profile.id } });
   await prisma.professionalCredentialEvidence.delete({ where: { id: evidence.id } });
   await prisma.professionalProfile.delete({ where: { id: profile.id } });
   await prisma.roleAssignment.delete({ where: { id: professionalRole.id } });

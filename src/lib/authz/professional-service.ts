@@ -31,10 +31,10 @@ export async function createProfessionalAuthorization(prisma: PrismaClient, acto
     const profile = await tx.professionalProfile.findUnique({ where: { id: professionalProfileId } });
     if (!profile || profile.credentialStatus !== "VERIFIED") throw new AuthorizationDeniedError("Verified professional credentials are required.");
     if ((await tx.professionalCredentialEvidence.count({ where: { professionalProfileId, status: "ACCEPTED" } })) < 1) throw new AuthorizationDeniedError("Accepted credential evidence is required.");
-    if (scopes.length === 0 || scopes.some((scope) => scope.farmerId && scope.animalId)) throw new AuthorizationDeniedError("Invalid authorization scopes.");
-    const authorization = await tx.professionalAuthorization.create({ data: { professionalProfileId, cooperativeId, expiresAt, authorizedByUserId: actor.userId, scopes: { create: scopes.map((scope) => ({ ...scope, cooperativeId })) } }, include: { scopes: true } });
+    if (scopes.length === 0 || scopes.some((scope) => scope.farmerId && scope.animalId) || scopes.some((scope) => scope.scopeType === "ANIMAL" || scope.animalId)) throw new AuthorizationDeniedError("Animal authorization is unavailable until the Animal access policy is implemented.");
+    const authorization = await tx.professionalAuthorization.create({ data: { professionalProfileId, cooperativeId, status: "SUSPENDED", expiresAt, authorizedByUserId: actor.userId, scopes: { create: scopes.map((scope) => ({ ...scope, cooperativeId })) } }, include: { scopes: true } });
     await tx.professionalAuthorizationDecision.create({ data: { authorizationId: authorization.id, decision: "AUTHORIZED", actorUserId: actor.userId, reason: "Authorization created" } });
-    return authorization;
+    return tx.professionalAuthorization.update({ where: { id: authorization.id }, data: { status: "ACTIVE" }, include: { scopes: true } });
   });
 }
 

@@ -13,7 +13,10 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:test:consent": "node scripts/test-consent-authorization.js",
-    "db:test:hardening": "tsx scripts/test-authz-hardening.ts"
+    "db:test:hardening": "tsx scripts/test-authz-hardening.ts",
+    "db:test:integrity": "tsx scripts/test-db-integrity-b23.ts",
+    "db:test:animals": "tsx scripts/test-animal-identity.ts",
+    "test:architecture": "node scripts/test-architecture-b23.js"
   },
   "dependencies": {
     "@prisma/client": "6.19.0",

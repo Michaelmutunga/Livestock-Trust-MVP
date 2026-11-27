@@ -2,7 +2,7 @@
 
 ## Verified state
 
-As of 2026-11-26, Milestone 1, Milestone 2A, Milestone 2B, and Milestone 2B.1 created the Next.js foundation, PostgreSQL Compose configuration, Prisma foundation, core identity/tenancy schema, consent/access grants, professional authorization schema, and authorization-integrity hardening. The repository has no commit yet. Authentication and later business domain modules remain unimplemented.
+As of 2026-11-26, Milestone 1, Milestone 2A, Milestone 2B, Milestone 2B.1, Milestone 2B.2, and Milestone 2B.3 created the Next.js foundation, PostgreSQL Compose configuration, Prisma foundation, core identity/tenancy schema, consent/access grants, professional authorization schema, authorization-integrity hardening, protected data-access services, explicit consent provenance, legacy quarantine and database integrity triggers. Authentication and later business domain modules remain unimplemented. Git history is pushed through Milestone 2B.1; Milestone 2B.2 and 2B.3 remain uncommitted until review.
 
 ## Stack and dependencies
 
@@ -23,9 +23,16 @@ Declared and installed: Next.js 15.5.7, React 19.1.0, React DOM 19.1.0, TypeScri
 - `scripts/test-db.js`: membership uniqueness and cooperative role-scoping tests.
 - `scripts/test-consent-authorization.js`: consent and professional authorization tests.
 - `src/lib/authz/`: trusted actor boundary, deny-by-default policies, and transactional consent/professional authorization services.
+- `src/lib/authz/auth-boundary.ts`: designated future authentication-adapter boundary; no production provider is connected.
 - `scripts/test-authz-hardening.ts`: hardening tests for authorization decisions and database integrity.
 - `prisma/migrations/20261126093000_authorization_integrity_hardening/migration.sql`: reviewed incremental integrity migration.
 - `prisma/migrations/20261126094500_exact_consent_scope_guard/migration.sql` and `20261126095000_fix_exact_consent_scope_guard/migration.sql`: exact-scope trigger guard (including nullable references).
+- `prisma/migrations/20261126110000_consent_capture_provenance/migration.sql`: consent capture actor and notes, backfilled without deleting records.
+- `prisma/migrations/20261126130000_consent_and_authorization_integrity/migration.sql`: provider provenance, legacy quarantine, terminal revocation, immutable identity, deferred animal scopes and professional review/decision triggers.
+- `prisma/migrations/20261126131500_quarantine_unverifiable_legacy_authority/migration.sql`: preserves but deactivates legacy authority without review/decision history.
+- `prisma/migrations/20261126134500_protect_authority_history/migration.sql`: retains required review and authorization decision history while authority is active.
+- `scripts/test-db-integrity-b23.ts` and `scripts/test-architecture-b23.js`: direct SQL integrity and import-boundary tests.
+- `src/lib/authz/protected-data-service.ts`: approved reads for private contacts, consent/grant records, credential evidence and professional authorizations.
 
 ## Business rules
 
@@ -43,7 +50,7 @@ The target database was empty before migration. The unrelated `kbf-platform-db-1
 
 ## Exact next task
 
-After Milestone 2B.1 review and separate approval, begin the next controlled phase: animal identity and cooperative animal links. Do not add ownership, veterinary, breeding, milk, intervention, audit, or Auth.js adapter modules before approval.
+Milestone 2C animal identity and cooperative animal links are implemented in migration `20261127100000_animal_identity_and_cooperative_links`. The exact next task is independent review, then ownership claims/evidence/transfers only after separate approval. Do not add custody/location, veterinary, breeding, milk, intervention, audit, or Auth.js adapter modules before approval. A real authentication provider must be connected before production user-facing authorization is claimed.
 
 ## Files requiring care
 

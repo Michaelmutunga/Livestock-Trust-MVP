@@ -1,15 +1,19 @@
 import { Prisma, Role } from "@prisma/client";
 
 import { AuthorizationDeniedError } from "./errors";
+import { assertTrustedActorContext } from "./auth-boundary";
 import type { TrustedActorContext } from "./context";
 
 type DatabaseClient = Prisma.TransactionClient | Prisma.DefaultPrismaClient;
 
 const activeUser = async (db: DatabaseClient, actor: TrustedActorContext) => {
+  assertTrustedActorContext(actor);
   const user = await db.user.findFirst({ where: { id: actor.userId, status: "ACTIVE" }, select: { id: true } });
   if (!user) throw new AuthorizationDeniedError();
   return user;
 };
+
+export const assertActiveActor = activeUser;
 
 export async function hasRole(db: DatabaseClient, actor: TrustedActorContext, role: Role, cooperativeId?: string) {
   await activeUser(db, actor);
@@ -23,6 +27,12 @@ export async function assertCanManageConsent(db: DatabaseClient, actor: TrustedA
   const system = await hasRole(db, actor, "SYSTEM_ADMINISTRATOR");
   const administrator = await hasRole(db, actor, "COOPERATIVE_ADMINISTRATOR", cooperativeId);
   if (!system && !administrator) throw new AuthorizationDeniedError();
+}
+
+export async function assertCanCaptureConsent(db: DatabaseClient, actor: TrustedActorContext, cooperativeId: string, farmerId: string) {
+  if (!(await hasRole(db, actor, "FIELD_OFFICER", cooperativeId))) throw new AuthorizationDeniedError("Only an authorized field officer may capture farmer consent.");
+  const membership = await db.farmerCooperativeMembership.findFirst({ where: { farmerId, cooperativeId, status: "ACTIVE" }, select: { id: true } });
+  if (!membership) throw new AuthorizationDeniedError("The farmer must have an active membership in the cooperative.");
 }
 
 export async function assertCanReviewCredentials(db: DatabaseClient, actor: TrustedActorContext) {
@@ -65,6 +75,7 @@ export async function getEligibleConsentGrant(
         scopeType: input.scopeType,
         scopeReferenceId: input.scopeReferenceId ?? null,
         consentStatus: "ACTIVE",
+        provenanceStatus: "VERIFIED",
         revokedAt: null,
         effectiveFrom: { lte: now },
         OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
@@ -79,6 +90,8 @@ export async function getEligibleProfessionalAuthorization(
   actor: TrustedActorContext,
   input: { cooperativeId: string; farmerId?: string; animalId?: string },
 ) {
+  assertTrustedActorContext(actor);
+  if (input.animalId) throw new AuthorizationDeniedError("Animal authorization is unavailable until the Animal access policy is implemented.");
   const profile = await db.professionalProfile.findUnique({ where: { userId: actor.userId }, select: { id: true, credentialStatus: true } });
   if (!profile || profile.credentialStatus !== "VERIFIED") throw new AuthorizationDeniedError();
   const acceptedEvidence = await db.professionalCredentialEvidence.count({ where: { professionalProfileId: profile.id, status: "ACCEPTED" } });

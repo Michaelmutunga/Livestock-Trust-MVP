@@ -10,5 +10,9 @@ Feature boundaries are planned for cooperatives, farmers, livestock, veterinary,
 Browser -> Next.js App Router -> server authorization/data access -> PostgreSQL
 
 The server authorization boundary is centralized in `src/lib/authz/`. It accepts only a trusted actor context from the future authentication layer, uses deny-by-default policy functions, and evaluates consent and professional authorization status, scope, expiry, revocation, and cooperative boundaries before access. Request payload IDs are not trusted as proof of identity or permission.
+
+Protected records are read through approved services in `src/lib/authz/protected-data-service.ts`; an ESLint architecture rule prevents App Router files from importing Prisma or the database singleton directly. Authentication is not implemented yet, so no production user-facing authorization boundary is claimed.
+
+The future authentication adapter is the only designated actor-creation boundary (`src/lib/authz/auth-boundary.ts`). Runtime capabilities are issued into an internal weak set, carry session and expiry metadata, and are revalidated for active user and role state by protected services.
                                              |-> future file storage for photos
 ```
